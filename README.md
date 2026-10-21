@@ -105,7 +105,7 @@ graph TD
     Worker <-->|Atomic SKIP LOCKED Lease| NeonDB
     Worker -->|Async HTTPX Pings| TargetServices
     Worker -->|HTTPS Port 443| Brevo
-    Worker -->|Port 465 (Local)| SMTP
+    Worker -->|Port 465 Local Dev| SMTP
     Worker -->|Incident Payloads| Webhooks
 ```
 
