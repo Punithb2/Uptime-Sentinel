@@ -27,7 +27,13 @@ export default function Dashboard() {
       const res = await api.get('/services/dashboard/summary');
       return res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: (query) => {
+      const services = query?.state?.data?.services || [];
+      const hasPendingOrOutage = services.some(
+        (s) => s.service?.status === 'PENDING' || s.service?.status === 'DOWN' || !s.recent_checks?.length
+      );
+      return hasPendingOrOutage ? 2000 : 15000;
+    },
   });
 
   const degradedServices = summary?.services?.filter(s => s.service.status === 'DOWN') || [];
@@ -43,6 +49,7 @@ export default function Dashboard() {
       await api.post(`/services/${serviceId}/check-now`);
       showToast('Immediate health probe dispatched.');
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['globalIncidents'] });
     } catch {
       showToast('Could not trigger immediate check.', 'error');
     }

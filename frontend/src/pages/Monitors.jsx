@@ -399,6 +399,7 @@ export default function Monitors() {
 
       showToast('Monitor registered! Probing endpoint now.');
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['globalIncidents'] });
     } catch (err) {
       setActionError(err.response?.data?.detail || 'Failed to add service.');
     } finally {
@@ -418,6 +419,7 @@ export default function Monitors() {
       setIsDeleting(true);
       await api.delete(`/services/${id}`);
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['globalIncidents'] });
       showToast('Monitor permanently deleted.');
       setPendingDeleteId(null);
     } catch {
@@ -445,6 +447,7 @@ export default function Monitors() {
     try {
       await api.post(`/services/${id}/${action}`);
       queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['globalIncidents'] });
       showToast(action === 'pause' ? 'Monitor paused.' : action === 'resume' ? 'Monitor resumed.' : 'Probe dispatched.');
     } catch {
       queryClient.setQueryData(['dashboardSummary'], previousSummary);

@@ -13,9 +13,10 @@ import {
   Moon, 
   RefreshCw
 } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { RouteSkeleton } from './Skeletons';
 import { useTheme } from './ThemeContext';
+import { api } from '../lib/api';
 
 export default function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -25,6 +26,35 @@ export default function Layout() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { theme, toggleTheme } = useTheme();
+
+  // Persistent background telemetry kept live across all routes
+  const { data: summary } = useQuery({
+    queryKey: ['dashboardSummary'],
+    queryFn: async () => {
+      const res = await api.get('/services/dashboard/summary');
+      return res.data;
+    },
+    refetchInterval: (query) => {
+      const services = query?.state?.data?.services || [];
+      const hasPendingOrOutage = services.some(
+        (s) => s.service?.status === 'PENDING' || s.service?.status === 'DOWN' || !s.recent_checks?.length
+      );
+      return hasPendingOrOutage ? 2000 : 15000;
+    },
+  });
+
+  // Persistent global incidents query kept live in the background
+  useQuery({
+    queryKey: ['globalIncidents'],
+    queryFn: async () => {
+      const res = await api.get('/services/dashboard/incidents');
+      return res.data;
+    },
+    refetchInterval: () => {
+      const hasOutage = summary?.services?.some((s) => s.service?.status === 'DOWN');
+      return hasOutage ? 2000 : 15000;
+    },
+  });
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -183,7 +213,21 @@ export default function Layout() {
               <Link
                 key={item.name}
                 to={item.href}
-                onMouseEnter={prefetchRoute[item.href]}
+                onMouseEnter={() => {
+                  prefetchRoute[item.href]?.();
+                  if (item.href === '/incidents') {
+                    queryClient.prefetchQuery({
+                      queryKey: ['globalIncidents'],
+                      queryFn: async () => (await api.get('/services/dashboard/incidents')).data,
+                    });
+                  }
+                  if (item.href === '/dashboard' || item.href === '/monitors') {
+                    queryClient.prefetchQuery({
+                      queryKey: ['dashboardSummary'],
+                      queryFn: async () => (await api.get('/services/dashboard/summary')).data,
+                    });
+                  }
+                }}
                 onFocus={prefetchRoute[item.href]}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`group flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${

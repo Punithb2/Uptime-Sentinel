@@ -22,7 +22,11 @@ export default function Incidents() {
       const res = await api.get('/services/dashboard/incidents');
       return res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: (query) => {
+      const data = query?.state?.data || [];
+      const hasOpen = data.some((i) => i.is_open);
+      return hasOpen ? 2000 : 15000;
+    },
   });
 
   const formatDate = (dateString) => {
@@ -147,7 +151,7 @@ export default function Incidents() {
       </div>
 
       {/* Incidents Timeline */}
-      {isLoading ? (
+      {isLoading && incidents.length === 0 ? (
         <ListSkeleton rows={4} />
       ) : filteredIncidents.length === 0 ? (
         <div className="glass-card rounded-2xl p-16 text-center flex flex-col items-center justify-center">
