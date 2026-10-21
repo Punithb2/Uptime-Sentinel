@@ -336,7 +336,7 @@ export default function Monitors() {
 
     try {
       setIsCreating(true);
-      await api.post('/services/', { 
+      const res = await api.post('/services/', { 
         name, 
         url, 
         check_interval_seconds: Number(interval),
@@ -348,6 +348,28 @@ export default function Monitors() {
         failure_threshold: Number(threshold)
       });
       
+      const newService = res.data;
+
+      // Instantly inject new service into query cache so the card appears simultaneously with the toast
+      queryClient.setQueryData(['dashboardSummary'], (current) => {
+        if (!current) return current;
+        const newEntry = {
+          service: newService,
+          uptime_percentage: 100.0,
+          recent_checks: [],
+          active_incident: null,
+        };
+        return {
+          ...current,
+          stats: {
+            ...current.stats,
+            total_monitors: (current.stats?.total_monitors || 0) + 1,
+            pending_monitors: (current.stats?.pending_monitors || 0) + 1,
+          },
+          services: [newEntry, ...(current.services || [])],
+        };
+      });
+
       setName('');
       setUrl('');
       setInterval(60);
@@ -363,8 +385,8 @@ export default function Monitors() {
       setShowAdvanced(false);
       setIsFormOpen(false);
 
-      queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
       showToast('Monitor registered! Probing endpoint now.');
+      queryClient.invalidateQueries({ queryKey: ['dashboardSummary'] });
     } catch (err) {
       setActionError(err.response?.data?.detail || 'Failed to add service.');
     } finally {
