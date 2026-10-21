@@ -42,7 +42,7 @@
     font-family: var(--font-sans);
     background-color: var(--bg-page);
     color: var(--text-primary);
-    overflow: hidden;
+    overflow-x: hidden;
   }
 
   code, pre, kbd {

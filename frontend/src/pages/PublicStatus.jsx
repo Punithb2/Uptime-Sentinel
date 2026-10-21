@@ -57,7 +57,7 @@ export default function PublicStatus() {
     : 100;
 
   return (
-    <div className="min-h-screen bg-[#090D16] text-slate-100 py-12 px-4 sm:px-6 lg:px-8 selection:bg-blue-500/20 selection:text-blue-300">
+    <div className="min-h-screen w-full overflow-y-auto bg-[#090D16] text-slate-100 py-12 px-4 sm:px-6 lg:px-8 selection:bg-blue-500/20 selection:text-blue-300">
       <div className="max-w-3xl mx-auto space-y-8 page-enter">
         {/* Brand Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-6">
