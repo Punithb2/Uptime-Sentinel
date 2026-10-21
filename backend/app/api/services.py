@@ -58,7 +58,7 @@ async def get_services(
 ):
     # Multi-tenant isolation: Only fetch services owned by the current user
     result = await db.execute(
-        select(Service).where(Service.owner_id == current_user.id)
+        select(Service).where(Service.owner_id == current_user.id).order_by(Service.id.desc())
     )
     return list(result.scalars().all())
 
@@ -160,7 +160,9 @@ async def get_dashboard_summary(
     current_user: User = Depends(get_current_user)
 ):
     """Fetches dashboard summary, fully optimized to eliminate N+1 queries."""
-    services_query = await db.execute(select(Service).where(Service.owner_id == current_user.id))
+    services_query = await db.execute(
+        select(Service).where(Service.owner_id == current_user.id).order_by(Service.id.desc())
+    )
     services = services_query.scalars().all()
     
     if not services:

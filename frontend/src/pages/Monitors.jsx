@@ -164,29 +164,35 @@ function ServiceCard({ data, onDelete, onAction, onToggleVisibility }) {
           </div>
 
           <div className="flex items-center gap-0.5 h-7 p-1 rounded-lg bg-slate-900/70 border border-white/5 relative">
-            {isPending && !isPaused && displayChecks.length === 0 ? (
-              <div className="w-full h-full bg-slate-700/30 rounded animate-pulse" />
-            ) : (
-              displayChecks.map((check, idx) => {
-                const isCheckUp = check.status === 'UP';
-                return (
-                  <button
-                    key={check.id || idx}
-                    type="button"
-                    onMouseEnter={() => setHoveredCheck(check)}
-                    onMouseLeave={() => setHoveredCheck(null)}
-                    aria-label={`Check at ${check.checked_at}`}
-                    className={`flex-1 h-full rounded-[2px] transition-transform hover:scale-y-125 hover:z-10 focus:outline-none ${
-                      isCheckUp ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-rose-500 hover:bg-rose-400'
-                    }`}
-                  />
-                );
-              })
-            )}
+            {displayChecks.map((check, idx) => {
+              const isCheckUp = check.status === 'UP';
+              return (
+                <button
+                  key={check.id || idx}
+                  type="button"
+                  onMouseEnter={() => setHoveredCheck(check)}
+                  onMouseLeave={() => setHoveredCheck(null)}
+                  aria-label={`Check at ${check.checked_at}`}
+                  className={`flex-1 h-full rounded-[2px] transition-all duration-300 hover:scale-y-125 hover:z-10 focus:outline-none ${
+                    isCheckUp ? 'bg-emerald-500 hover:bg-emerald-400' : 'bg-rose-500 hover:bg-rose-400'
+                  }`}
+                />
+              );
+            })}
 
-            {Array.from({ length: Math.max(0, 30 - displayChecks.length) }).map((_, idx) => (
-              <div key={`empty-${idx}`} className="flex-1 h-full bg-slate-800/40 rounded-[2px]" />
-            ))}
+            {Array.from({ length: Math.max(0, 30 - displayChecks.length) }).map((_, idx) => {
+              const isFirstPendingSlot = idx === 0 && isPending && !isPaused && displayChecks.length === 0;
+              return (
+                <div 
+                  key={`empty-${idx}`} 
+                  className={`flex-1 h-full rounded-[2px] transition-all duration-300 ${
+                    isFirstPendingSlot 
+                      ? 'bg-blue-400/50 animate-pulse ring-1 ring-blue-400/60' 
+                      : 'bg-slate-800/40'
+                  }`} 
+                />
+              );
+            })}
           </div>
 
           {/* Floating Hover Tooltip */}
@@ -313,7 +319,13 @@ export default function Monitors() {
       const res = await api.get('/services/dashboard/summary');
       return res.data;
     },
-    refetchInterval: 15000, 
+    refetchInterval: (query) => {
+      const services = query?.state?.data?.services || [];
+      const hasPending = services.some(
+        (s) => s.service?.status === 'PENDING' || !s.recent_checks || s.recent_checks.length === 0
+      );
+      return hasPending ? 1500 : 15000;
+    }, 
   });
 
   const handleAddService = async (e) => {
